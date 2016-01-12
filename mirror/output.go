@@ -99,11 +99,16 @@ func commentDescriptionsOverlap(a, b comment.Comment) bool {
 		quoteComment(a) == b.Description
 }
 
+func commentLocationPathsMatch(a, b comment.Location) bool {
+	return a == b ||
+		(a.Commit == b.Commit && a.Path == b.Path)
+}
+
 func commentLocationsOverlap(a, b comment.Comment) bool {
 	return a.Location == b.Location ||
 		(a.Location == nil && b.Location.Path == "") ||
 		(b.Location == nil && a.Location.Path == "") ||
-		(a.Location.Commit == b.Location.Commit && a.Location.Path == b.Location.Path)
+		(a.Location != nil && b.Location != nil && commentLocationPathsMatch(*a.Location, *b.Location))
 }
 
 // CommentsOverlap determines if two review comments are sufficiently similar that one is a good-enough replacement for the other.
