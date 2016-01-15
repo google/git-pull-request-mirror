@@ -82,12 +82,28 @@ func retry(c context.Context, f func() (*github.Response, error)) error {
 	return errTooManyRetries
 }
 
-// Each repository goes through a few operations:
-// - validate: ensure the repository is real, accessible with the given token, etc.
-// - initialize: initial, pull-everything-into-notes operation (can be
-//	repeated later - merging notes upstream is indempotent due to
-//	cat-sort-uniq, even though local notes might have some duplication.)
-// - hook: setup web hooks
+// Each repository goes through the following lifecycle states:
+//
+//   [validating]
+//     |
+//     | (validate access to the repo)
+//     |
+//     V
+//   [hooks initializing]
+//     |
+//     | (create the web hook, and then recieve the web hook "ping")
+//     |
+//     V
+//   [initializing]
+//     |
+//     | (mirror the pull requests)
+//     |
+//     V
+//   [ready]
+//     | ^
+//     | | (recieve any web hook and mirror the pull requests)
+//     | |
+//     +-+
 
 // validate ensures that the repo is accessible
 func validate(user, repo string) {
@@ -183,15 +199,14 @@ func validate(user, repo string) {
 	}
 
 	err = modifyRepoData(c, user, repo, func(item *repoStorageData) {
-		item.Status = statusInitializing
+		item.Status = statusHooksInitializing
 	})
 
 	if err != nil {
 		errorf("Can't change repo status: %s", err.Error())
 	}
 
-	// Pass of to initialization
-	initialize(user, repo)
+	go createHooks(user, repo)
 }
 
 // initialize performs initial reading and commiting for the repository
@@ -268,7 +283,7 @@ func initialize(userName, repoName string) {
 	log.Infof(c, "Success initializing %s/%s", userName, repoName)
 
 	err = modifyRepoData(c, userName, repoName, func(item *repoStorageData) {
-		item.Status = statusHooksInitializing
+		item.Status = statusReady
 	})
 
 	if err != nil {
@@ -278,8 +293,6 @@ func initialize(userName, repoName string) {
 			err.Error(),
 		)
 	}
-
-	go createHooks(userName, repoName)
 }
 
 // hook sets up webhooks for a given repository
@@ -456,12 +469,15 @@ func pingHook(userName, repoName string, repoData repoStorageData, content []byt
 	}
 
 	err = modifyRepoData(c, userName, repoName, func(item *repoStorageData) {
-		item.Status = statusReady
+		item.Status = statusInitializing
 	})
 
 	if err != nil {
-		log.Errorf(c, "Can't set repo %s/%s to ready: %s", userName, repoName, err.Error())
+		log.Errorf(c, "Can't set repo %s/%s to initializing: %s", userName, repoName, err.Error())
 	}
+
+	// Pass of to initialization
+	go initialize(userName, repoName)
 }
 
 // makeErrorf returns a utility function that logs a given error and then sets the repo's error information to that error
