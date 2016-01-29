@@ -151,6 +151,7 @@ func CommentsOverlap(a, b comment.Comment) bool {
 // use the same logic for logging messages in either our CLI or our App Engine apps, even though
 // the two have different logging frameworks.
 func WriteNewReviews(reviews []review.Review, repo repository.Repo, logChan chan<- string) error {
+	existingReviews := review.ListAll(repo)
 	for _, r := range reviews {
 		requestNote, err := r.Request.Write()
 		if err != nil {
@@ -159,14 +160,12 @@ func WriteNewReviews(reviews []review.Review, repo repository.Repo, logChan chan
 		if err != nil {
 			return err
 		}
-		existingRequests := request.ParseAllValid(repo.GetNotes(request.Ref, r.Revision))
-		missing := true
-		for _, existing := range existingRequests {
-			if RequestsOverlap(existing, r.Request) {
-				missing = false
-			}
+		alreadyPresent := false
+		if existing := findMatchingExistingReview(r, existingReviews); existing != nil {
+			alreadyPresent = RequestsOverlap(existing.Request, r.Request)
+			r.Revision = existing.Revision
 		}
-		if missing {
+		if !alreadyPresent {
 			requestJSON, err := r.GetJSON()
 			if err != nil {
 				return err
@@ -178,6 +177,23 @@ func WriteNewReviews(reviews []review.Review, repo repository.Repo, logChan chan
 		}
 		if err := WriteNewComments(r, repo, logChan); err != nil {
 			return err
+		}
+	}
+	return nil
+}
+
+// findMatchingExistingReview determines if the given list of existing reviews includes
+// one that overlaps with the given new review.
+func findMatchingExistingReview(r review.Review, existingReviews []review.Summary) *review.Summary {
+	for _, existing := range existingReviews {
+		// This code assumes that a review ref is never reused. That is not
+		// true in general for git-appraise (which does support reusing
+		// developer branches), but *is* true for reviews created by this tool.
+		// The reason for this is that we always set the review ref to the
+		// "refs/pull/<PR#>/head" ref, and GitHub does not reuse pull request
+		// numbers.
+		if existing.Request.ReviewRef == r.Request.ReviewRef {
+			return &existing
 		}
 	}
 	return nil
