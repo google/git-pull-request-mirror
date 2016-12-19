@@ -31,7 +31,7 @@ import (
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/log"
 
-	"github-mirror/mirror"
+	"github.com/google/git-pull-request-mirror/mirror"
 )
 
 const (
@@ -423,7 +423,7 @@ func restartAbandonedOperations() {
 
 	repos, err := getAllRepoData(c)
 	if err != nil {
-		log.Errorf(c, "Can't load repos: %s", err.Error)
+		log.Errorf(c, "Can't load repos: %s", err.Error())
 		return
 	}
 
