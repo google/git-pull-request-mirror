@@ -43,16 +43,16 @@ var (
 
 // Can be stubbed out in testing; satisfied by github.Client.Repositories
 type repositoriesService interface {
-	ListStatuses(owner, repo, ref string, opt *github.ListOptions) ([]github.RepoStatus, *github.Response, error)
+	ListStatuses(owner, repo, ref string, opt *github.ListOptions) ([]*github.RepoStatus, *github.Response, error)
 }
 
 type pullRequestsService interface {
-	List(owner string, repo string, opt *github.PullRequestListOptions) ([]github.PullRequest, *github.Response, error)
-	ListComments(owner string, repo string, number int, opt *github.PullRequestListCommentsOptions) ([]github.PullRequestComment, *github.Response, error)
+	List(owner string, repo string, opt *github.PullRequestListOptions) ([]*github.PullRequest, *github.Response, error)
+	ListComments(owner string, repo string, number int, opt *github.PullRequestListCommentsOptions) ([]*github.PullRequestComment, *github.Response, error)
 }
 
 type issuesService interface {
-	ListComments(owner string, repo string, number int, opt *github.IssueListCommentsOptions) ([]github.IssueComment, *github.Response, error)
+	ListComments(owner string, repo string, number int, opt *github.IssueListCommentsOptions) ([]*github.IssueComment, *github.Response, error)
 }
 
 type retryableRequest func() (*github.Response, error)
@@ -204,8 +204,8 @@ func GetAllPullRequests(local repository.Repo, remoteUser, remoteRepo string, cl
 	return output, nil
 }
 
-func fetchPullRequests(remoteUser, remoteRepo string, prs pullRequestsService) ([]github.PullRequest, error) {
-	var results []github.PullRequest
+func fetchPullRequests(remoteUser, remoteRepo string, prs pullRequestsService) ([]*github.PullRequest, error) {
+	var results []*github.PullRequest
 	err := executeListRequest(func(listOpts github.ListOptions) (*github.Response, error) {
 		opts := &github.PullRequestListOptions{
 			State:       "all",
@@ -224,8 +224,8 @@ func fetchPullRequests(remoteUser, remoteRepo string, prs pullRequestsService) (
 }
 
 // fetchComments fetches all of the comments for each issue it gets and then converts them.
-func fetchComments(pr github.PullRequest, remoteUser, remoteRepo string, prs pullRequestsService, is issuesService) ([]github.IssueComment, []github.PullRequestComment, error) {
-	var issueComments []github.IssueComment
+func fetchComments(pr *github.PullRequest, remoteUser, remoteRepo string, prs pullRequestsService, is issuesService) ([]*github.IssueComment, []*github.PullRequestComment, error) {
+	var issueComments []*github.IssueComment
 	err := executeListRequest(func(listOpts github.ListOptions) (*github.Response, error) {
 		listOptions := &github.IssueListCommentsOptions{
 			ListOptions: listOpts,
@@ -239,7 +239,7 @@ func fetchComments(pr github.PullRequest, remoteUser, remoteRepo string, prs pul
 	if err != nil {
 		return nil, nil, err
 	}
-	var diffComments []github.PullRequestComment
+	var diffComments []*github.PullRequestComment
 	err = executeListRequest(func(listOpts github.ListOptions) (*github.Response, error) {
 		listOptions := &github.PullRequestListCommentsOptions{
 			ListOptions: listOpts,

@@ -63,7 +63,7 @@ type repoServiceStub struct {
 	Responses []repoServiceResponse
 }
 
-func (s *repoServiceStub) ListStatuses(owner, repo, ref string, opt *github.ListOptions) ([]github.RepoStatus, *github.Response, error) {
+func (s *repoServiceStub) ListStatuses(owner, repo, ref string, opt *github.ListOptions) ([]*github.RepoStatus, *github.Response, error) {
 	if s.Index >= len(s.Responses) {
 	}
 	r := s.Responses[s.Index]
@@ -102,7 +102,7 @@ func TestFetchReports(t *testing.T) {
 		expectedReports = append(expectedReports, *successReport)
 		expectedReports = append(expectedReports, *failureReport)
 		responses = append(responses, repoServiceResponse{
-			Results: []github.RepoStatus{
+			Results: []*github.RepoStatus{
 				successResult,
 				failureResult,
 			},

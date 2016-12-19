@@ -42,8 +42,8 @@ import (
 	"github.com/google/git-appraise/repository"
 	"github.com/google/go-github/github"
 
-	"github-mirror/auth"
-	"github-mirror/mirror"
+	"github.com/google/git-pull-request-mirror/auth"
+	"github.com/google/git-pull-request-mirror/mirror"
 )
 
 var remoteRepository = flag.String("target", "", "Github repository to read data from")

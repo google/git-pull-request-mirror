@@ -49,7 +49,7 @@ func ConvertTime(t time.Time) string {
 }
 
 // ConvertStatus converts a commit status fetched from the GitHub API into a CI report.
-func ConvertStatus(repoStatus github.RepoStatus) (*ci.Report, error) {
+func ConvertStatus(repoStatus *github.RepoStatus) (*ci.Report, error) {
 	result := ci.Report{}
 	if repoStatus.UpdatedAt != nil {
 		result.Timestamp = ConvertTime(*repoStatus.UpdatedAt)
@@ -80,7 +80,7 @@ func ConvertStatus(repoStatus github.RepoStatus) (*ci.Report, error) {
 }
 
 // ConvertPullRequest converts a pull request fetched from the GitHub API into a review request.
-func ConvertPullRequest(pr github.PullRequest) (*request.Request, error) {
+func ConvertPullRequest(pr *github.PullRequest) (*request.Request, error) {
 	if pr.Number == nil || pr.User.Login == nil ||
 		pr.Base == nil || pr.Base.Ref == nil || pr.Base.SHA == nil ||
 		(pr.CreatedAt == nil && pr.UpdatedAt == nil) {
@@ -121,7 +121,7 @@ func ConvertPullRequest(pr github.PullRequest) (*request.Request, error) {
 }
 
 // ConvertIssueComment converts a comment on the issue associated with a pull request into a git-appraise review comment.
-func ConvertIssueComment(issueComment github.IssueComment) (*comment.Comment, error) {
+func ConvertIssueComment(issueComment *github.IssueComment) (*comment.Comment, error) {
 	if issueComment.User == nil || issueComment.User.Login == nil || issueComment.Body == nil ||
 		(issueComment.UpdatedAt == nil && issueComment.CreatedAt == nil) {
 		return nil, ErrInsufficientInfo
@@ -144,7 +144,7 @@ func ConvertIssueComment(issueComment github.IssueComment) (*comment.Comment, er
 }
 
 // ConvertDiffComment converts a comment on the diff associated with a pull request into a git-appraise review comment.
-func ConvertDiffComment(diffComment github.PullRequestComment) (*comment.Comment, error) {
+func ConvertDiffComment(diffComment *github.PullRequestComment) (*comment.Comment, error) {
 	if diffComment.User == nil || diffComment.User.Login == nil || diffComment.Body == nil ||
 		(diffComment.UpdatedAt == nil && diffComment.CreatedAt == nil) ||
 		diffComment.OriginalCommitID == nil {
@@ -190,7 +190,7 @@ func ConvertDiffComment(diffComment github.PullRequestComment) (*comment.Comment
 //
 // This method requires a local clone of the repository in order to compute the locations of
 // the different commits in the review.
-func ConvertPullRequestToReview(pr github.PullRequest, issueComments []github.IssueComment, diffComments []github.PullRequestComment, repo repository.Repo) (*review.Review, error) {
+func ConvertPullRequestToReview(pr *github.PullRequest, issueComments []*github.IssueComment, diffComments []*github.PullRequestComment, repo repository.Repo) (*review.Review, error) {
 	request, err := ConvertPullRequest(pr)
 	if err != nil {
 		return nil, err
@@ -242,7 +242,7 @@ func ConvertPullRequestToReview(pr github.PullRequest, issueComments []github.Is
 }
 
 // commentStartLine takes a PullRequestComment and returns the comment's start line.
-func commentStartLine(diffComment github.PullRequestComment) (uint32, error) {
+func commentStartLine(diffComment *github.PullRequestComment) (uint32, error) {
 	// This takes some contortions to figure out. The diffComment has a "position"
 	// field, but that is not the position of the comment. Instead, that is the
 	// position of the comment within the diff. Furthermore, this diff is a unified diff,
@@ -288,7 +288,7 @@ func commentStartLine(diffComment github.PullRequestComment) (uint32, error) {
 }
 
 // computeReviewStartingCommit computes the first commit in the review.
-func computeReviewStartingCommit(pr github.PullRequest, repo repository.Repo) (string, error) {
+func computeReviewStartingCommit(pr *github.PullRequest, repo repository.Repo) (string, error) {
 	if pr.Base == nil || pr.Base.SHA == nil ||
 		pr.Head == nil || pr.Head.SHA == nil {
 		return "", ErrInsufficientInfo
