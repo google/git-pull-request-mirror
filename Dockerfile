@@ -15,10 +15,6 @@
 FROM gcr.io/google_appengine/go-compat
 
 ENV GOPATH "/app/"
-RUN go get github.com/google/git-appraise/git-appraise && \
-    go get github.com/google/go-github/github && \
-    go get google.golang.org/appengine && \
-    go get golang.org/x/oauth2
+RUN go get github.com/google/git-pull-request-mirror/app
 
-ADD . /app/src/github-mirror
-RUN go build -tags appenginevm -o /app/_ah/exe github-mirror/app
+RUN go build -tags appenginevm -o /app/_ah/exe github.com/google/git-pull-request-mirror/app
