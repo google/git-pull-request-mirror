@@ -27,10 +27,8 @@ with the `repo` scope, for it to use.
 Setup:
 
 ```shell
-go get github.com/google/git-appraise/git-appraise
-go get github.com/google/go-github/github
-go get golang.org/x/oauth2
-go build -o ~/bin/mirror batch/batch.go
+go get github.com/google/git-pull-request-mirror/batch
+go build -o ~/bin/pr-mirror "${GOPATH}/src/github.com/google/git-pull-request-mirror/batch/batch.go"
 ```
 
 Example Usage (after you've cloned the repo to mirror):
@@ -38,7 +36,7 @@ Example Usage (after you've cloned the repo to mirror):
 ```shell
 git fetch origin '+refs/pull/*:refs/pull/*'
 git appraise pull
-~/bin/mirror --target ${GITHUB_USER}/${GITHUB_REPO} --local ./ -auth-token ${YOUR_AUTH_TOKEN}
+~/bin/pr-mirror --target ${GITHUB_USER}/${GITHUB_REPO} --local ./ -auth-token ${YOUR_AUTH_TOKEN}
 git appraise pull
 git appraise push
 ```
@@ -55,5 +53,5 @@ It uses the app engine datastore to store its configuration.
 To deploy:
 
 ```shell
-gcloud preview app deploy ./app.yaml
+gcloud app deploy ./app.yaml
 ```
