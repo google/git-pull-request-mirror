@@ -12,9 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM gcr.io/google_appengine/go-compat
+FROM gcr.io/google_appengine/golang
 
-ENV GOPATH "/app/"
-RUN go get github.com/google/git-pull-request-mirror/app
+ENV GOPATH "/go/"
+RUN apt-get update -yq && \
+    apt-get install -yq git-core
 
-RUN go build -tags appenginevm -o /app/_ah/exe github.com/google/git-pull-request-mirror/app
+COPY . /go/src/github.com/google/git-pull-request-mirror
+COPY . /go/src
+
+RUN export GOPATH="/go/" && \
+    go get github.com/google/go-github/github && \
+    go get github.com/google/git-appraise/git-appraise && \
+    go get google.golang.org/appengine && \
+    go get golang.org/x/oauth2 && \
+    go-wrapper install -tags appenginevm

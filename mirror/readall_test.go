@@ -17,6 +17,7 @@ limitations under the License.
 package mirror
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"testing"
@@ -63,7 +64,7 @@ type repoServiceStub struct {
 	Responses []repoServiceResponse
 }
 
-func (s *repoServiceStub) ListStatuses(owner, repo, ref string, opt *github.ListOptions) ([]*github.RepoStatus, *github.Response, error) {
+func (s *repoServiceStub) ListStatuses(ctx context.Context, owner, repo, ref string, opt *github.ListOptions) ([]*github.RepoStatus, *github.Response, error) {
 	if s.Index >= len(s.Responses) {
 	}
 	r := s.Responses[s.Index]

@@ -32,6 +32,7 @@ limitations under the License.
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -94,7 +95,7 @@ func main() {
 		client = auth.UnauthenticatedClient()
 	}
 
-	_, _, err = client.Repositories.Get(userName, repoName)
+	_, _, err = client.Repositories.Get(context.TODO(), userName, repoName)
 	if err != nil {
 		log.Fatal("Error fetching repository info: ", err.Error())
 	}
