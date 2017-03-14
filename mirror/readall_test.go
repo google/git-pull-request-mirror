@@ -53,7 +53,7 @@ var (
 )
 
 type repoServiceResponse struct {
-	Results  []github.RepoStatus
+	Results  []*github.RepoStatus
 	Response github.Response
 	Error    error
 }
@@ -78,7 +78,7 @@ func TestFetchReports(t *testing.T) {
 	now := time.Now()
 	for i := 0; i < pageCount; i++ {
 		successURL := fmt.Sprintf(statusTargetURLFormat, i*2)
-		successResult := github.RepoStatus{
+		successResult := &github.RepoStatus{
 			CreatedAt: &now,
 			State:     &stateSuccess,
 			TargetURL: &successURL,
@@ -89,7 +89,7 @@ func TestFetchReports(t *testing.T) {
 			t.Fatal(err)
 		}
 		failureURL := fmt.Sprintf(statusTargetURLFormat, i*2+1)
-		failureResult := github.RepoStatus{
+		failureResult := &github.RepoStatus{
 			CreatedAt: &now,
 			State:     &stateFailure,
 			TargetURL: &failureURL,
