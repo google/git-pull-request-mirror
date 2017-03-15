@@ -7,3 +7,5 @@
 {"timestamp":"1489539007","url":"https://travis-ci.org/google/git-pull-request-mirror/builds/211163514","agent":"continuous-integration/travis-ci/pr"}
 
 {"timestamp":"1489539013","url":"https://travis-ci.org/google/git-pull-request-mirror/builds/211163489","status":"success","agent":"continuous-integration/travis-ci/push"}
+
+{"timestamp":"1489539062","url":"https://travis-ci.org/google/git-pull-request-mirror/builds/211163514","status":"success","agent":"continuous-integration/travis-ci/pr"}
