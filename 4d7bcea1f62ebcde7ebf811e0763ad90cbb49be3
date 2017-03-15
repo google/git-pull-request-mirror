@@ -1,5 +1,3 @@
 {"timestamp":"1489539449","status":"success","agent":"cla/google"}
-
-{"timestamp":"1489539456","url":"https://travis-ci.org/google/git-pull-request-mirror/builds/211183885","agent":"continuous-integration/travis-ci/push"}
-
 {"timestamp":"1489539453","url":"https://travis-ci.org/google/git-pull-request-mirror/builds/211183881","agent":"continuous-integration/travis-ci/pr"}
+{"timestamp":"1489539456","url":"https://travis-ci.org/google/git-pull-request-mirror/builds/211183885","agent":"continuous-integration/travis-ci/push"}
