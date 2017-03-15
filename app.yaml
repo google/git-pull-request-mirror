@@ -13,8 +13,8 @@
 # limitations under the License.
 
 service: github-mirror
-runtime: go
-env: flex
+runtime: custom
+vm: true
 api_version: 1
 
 health_check:
