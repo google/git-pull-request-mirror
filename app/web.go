@@ -36,7 +36,7 @@ const (
 	idRepoToken = "repoToken"
 )
 
-var configTemplate = template.Must(template.ParseFiles("/app/src/github-mirror/app/templates/config.tmpl"))
+var configTemplate = template.Must(template.ParseFiles("/go/src/app/templates/config.tmpl"))
 
 // renderRepo represents a single repository to be rendered on the page
 type renderRepo struct {

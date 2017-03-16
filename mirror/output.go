@@ -209,5 +209,5 @@ func RequestsOverlap(a, b request.Request) bool {
 	return a.ReviewRef == b.ReviewRef &&
 		a.TargetRef == b.TargetRef &&
 		a.Description == b.Description &&
-		a.BaseCommit == b.BaseCommit
+		(a.BaseCommit == b.BaseCommit || a.BaseCommit == "" || b.BaseCommit == "")
 }

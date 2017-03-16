@@ -46,7 +46,7 @@ func TestConvertStatus(t *testing.T) {
 		Context:   &context,
 		CreatedAt: &createdAt,
 	}
-	result, err := ConvertStatus(input)
+	result, err := ConvertStatus(&input)
 	if err != nil || result == nil {
 		t.Fatal(err)
 	}
@@ -69,7 +69,7 @@ func TestConvertStatus(t *testing.T) {
 	}
 }
 
-func buildTestPullRequest(testRepo repository.Repo, reqNum int) github.PullRequest {
+func buildTestPullRequest(testRepo repository.Repo, reqNum int) *github.PullRequest {
 	reqTime := time.Now().Add(-3 * time.Hour)
 	reqTitle := "Bug fixes."
 	reqBody := "Fix some bugs."
@@ -78,7 +78,7 @@ func buildTestPullRequest(testRepo repository.Repo, reqNum int) github.PullReque
 	baseCommitSHA := repository.TestCommitE
 	headRef := repository.TestReviewRef
 	headCommitSHA := repository.TestCommitG
-	return github.PullRequest{
+	return &github.PullRequest{
 		CreatedAt: &reqTime,
 		Body:      &reqBody,
 		Title:     &reqTitle,
@@ -123,7 +123,7 @@ func TestConvertPullRequest(t *testing.T) {
 	}
 	if r.ReviewRef != pullRef || r.TargetRef != *pr.Base.Ref || r.Requester != contributorLogin ||
 		!strings.Contains(r.Description, *pr.Title) || !strings.Contains(r.Description, *pr.Body) ||
-		r.BaseCommit != *pr.Base.SHA || r.Timestamp != ConvertTime(*pr.CreatedAt) {
+		r.BaseCommit != "" || r.Timestamp != ConvertTime(*pr.CreatedAt) {
 		t.Errorf("Unexpected request %v", r)
 	}
 }
@@ -157,15 +157,15 @@ func TestConvertPullRequestToReview(t *testing.T) {
 	issueTime1 := now.Add(-2 * time.Hour)
 	issueComment2 := "Done"
 	issueTime2 := now.Add(-1 * time.Hour)
-	issueComments := []github.IssueComment{
-		github.IssueComment{
+	issueComments := []*github.IssueComment{
+		&github.IssueComment{
 			Body: &issueComment1,
 			User: &github.User{
 				Login: &repoOwner,
 			},
 			CreatedAt: &issueTime1,
 		},
-		github.IssueComment{
+		&github.IssueComment{
 			Body: &issueComment2,
 			User: &github.User{
 				Login: &contributorLogin,
@@ -182,8 +182,8 @@ func TestConvertPullRequestToReview(t *testing.T) {
 	diffComment2 := "Reply to comment on line 14"
 	diffTime2 := now.Add(-2 * time.Hour)
 	diffCommit := repository.TestCommitG
-	diffComments := []github.PullRequestComment{
-		github.PullRequestComment{
+	diffComments := []*github.PullRequestComment{
+		&github.PullRequestComment{
 			Body:             &diffComment1,
 			Path:             &filePath,
 			OriginalCommitID: &diffCommit,
@@ -193,7 +193,7 @@ func TestConvertPullRequestToReview(t *testing.T) {
 			},
 			CreatedAt: &diffTime1,
 		},
-		github.PullRequestComment{
+		&github.PullRequestComment{
 			Body:             &diffComment2,
 			Path:             &filePath,
 			OriginalCommitID: &diffCommit,
@@ -212,6 +212,13 @@ func TestConvertPullRequestToReview(t *testing.T) {
 	if r == nil {
 		t.Fatal("Unexpected nil review")
 	}
+	if r.Revision != repository.TestCommitG {
+		t.Fatal("Failed to compute the review commit")
+	}
+	if r.Request.BaseCommit != repository.TestCommitE {
+		t.Fatal("Failed to compute the base commit")
+	}
+
 	reviewJSON, err := r.GetJSON()
 	if err != nil {
 		t.Fatal(err)

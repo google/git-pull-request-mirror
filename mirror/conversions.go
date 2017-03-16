@@ -115,7 +115,6 @@ func ConvertPullRequest(pr *github.PullRequest) (*request.Request, error) {
 		TargetRef:   targetRef,
 		Requester:   *pr.User.Login,
 		Description: description,
-		BaseCommit:  *pr.Base.SHA,
 	}
 	return &r, nil
 }
@@ -198,6 +197,13 @@ func ConvertPullRequestToReview(pr *github.PullRequest, issueComments []*github.
 	revision, err := computeReviewStartingCommit(pr, repo)
 	if err != nil {
 		return nil, err
+	}
+	mergeBase, err := repo.MergeBase(request.TargetRef, revision)
+	if err != nil {
+		return nil, err
+	}
+	if mergeBase != revision {
+		request.BaseCommit = mergeBase
 	}
 
 	var comments []review.CommentThread

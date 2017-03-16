@@ -17,6 +17,7 @@ limitations under the License.
 package main
 
 import (
+	"context"
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
@@ -26,7 +27,6 @@ import (
 	"time"
 
 	"github.com/google/go-github/github"
-	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/log"
@@ -130,7 +130,7 @@ func validate(user, repo string) {
 	err = retry(c, func() (*github.Response, error) {
 		// APIMeta will always succeed and will tell us what scopes
 		// we have.
-		_, resp, err = githubClient.APIMeta()
+		_, resp, err = githubClient.APIMeta(context.TODO())
 		return resp, err
 	})
 
@@ -190,7 +190,7 @@ func validate(user, repo string) {
 
 	var remoteRepo *github.Repository
 	err = retry(c, func() (resp *github.Response, err error) {
-		remoteRepo, resp, err = githubClient.Repositories.Get(user, repo)
+		remoteRepo, resp, err = githubClient.Repositories.Get(context.TODO(), user, repo)
 		return
 	})
 
@@ -328,7 +328,7 @@ func createHooks(userName, repoName string) {
 
 	var hook *github.Hook
 	err = retry(c, func() (resp *github.Response, err error) {
-		hook, resp, err = client.Repositories.CreateHook(userName, repoName, &github.Hook{
+		hook, resp, err = client.Repositories.CreateHook(context.TODO(), userName, repoName, &github.Hook{
 			Name: &hookType,
 			Events: []string{
 				eventPing,
@@ -391,7 +391,7 @@ func deactivate(userName, repoName string) {
 
 	log.Infof(c, "Deleting hook for repository %s/%s", userName, repoName)
 	err = retry(c, func() (resp *github.Response, err error) {
-		resp, err = client.Repositories.DeleteHook(userName, repoName, repoData.HookID)
+		resp, err = client.Repositories.DeleteHook(context.TODO(), userName, repoName, repoData.HookID)
 		return
 	})
 	if err != nil {

@@ -17,6 +17,7 @@ limitations under the License.
 package mirror
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log"
@@ -43,16 +44,16 @@ var (
 
 // Can be stubbed out in testing; satisfied by github.Client.Repositories
 type repositoriesService interface {
-	ListStatuses(owner, repo, ref string, opt *github.ListOptions) ([]*github.RepoStatus, *github.Response, error)
+	ListStatuses(ctx context.Context, owner, repo, ref string, opt *github.ListOptions) ([]*github.RepoStatus, *github.Response, error)
 }
 
 type pullRequestsService interface {
-	List(owner string, repo string, opt *github.PullRequestListOptions) ([]*github.PullRequest, *github.Response, error)
-	ListComments(owner string, repo string, number int, opt *github.PullRequestListCommentsOptions) ([]*github.PullRequestComment, *github.Response, error)
+	List(ctx context.Context, owner string, repo string, opt *github.PullRequestListOptions) ([]*github.PullRequest, *github.Response, error)
+	ListComments(ctx context.Context, owner string, repo string, number int, opt *github.PullRequestListCommentsOptions) ([]*github.PullRequestComment, *github.Response, error)
 }
 
 type issuesService interface {
-	ListComments(owner string, repo string, number int, opt *github.IssueListCommentsOptions) ([]*github.IssueComment, *github.Response, error)
+	ListComments(ctx context.Context, owner string, repo string, number int, opt *github.IssueListCommentsOptions) ([]*github.IssueComment, *github.Response, error)
 }
 
 type retryableRequest func() (*github.Response, error)
@@ -126,7 +127,7 @@ func iterateRemoteCommits(remoteUser, remoteRepo string, client *github.Client) 
 		opts := &github.ReferenceListOptions{
 			ListOptions: listOpts,
 		}
-		refs, response, err := client.Git.ListRefs(remoteUser, remoteRepo, opts)
+		refs, response, err := client.Git.ListRefs(context.TODO(), remoteUser, remoteRepo, opts)
 		if err == nil {
 			for _, ref := range refs {
 				remoteCommits = append(remoteCommits, *ref.Object.SHA)
@@ -143,7 +144,7 @@ func iterateRemoteCommits(remoteUser, remoteRepo string, client *github.Client) 
 func fetchReportsForCommit(commitSHA, remoteUser, remoteRepo string, repoService repositoriesService, errOutput chan<- error) ([]ci.Report, error) {
 	var reports []ci.Report
 	err := executeListRequest(func(listOpts github.ListOptions) (*github.Response, error) {
-		statuses, resp, err := repoService.ListStatuses(remoteUser, remoteRepo, commitSHA, &listOpts)
+		statuses, resp, err := repoService.ListStatuses(context.TODO(), remoteUser, remoteRepo, commitSHA, &listOpts)
 		if err == nil {
 			for _, status := range statuses {
 				report, err := ConvertStatus(status)
@@ -211,7 +212,7 @@ func fetchPullRequests(remoteUser, remoteRepo string, prs pullRequestsService) (
 			State:       "all",
 			ListOptions: listOpts,
 		}
-		pullRequests, response, err := prs.List(remoteUser, remoteRepo, opts)
+		pullRequests, response, err := prs.List(context.TODO(), remoteUser, remoteRepo, opts)
 		if err == nil {
 			results = append(results, pullRequests...)
 		}
@@ -230,7 +231,7 @@ func fetchComments(pr *github.PullRequest, remoteUser, remoteRepo string, prs pu
 		listOptions := &github.IssueListCommentsOptions{
 			ListOptions: listOpts,
 		}
-		cs, resp, err := is.ListComments(remoteUser, remoteRepo, *pr.Number, listOptions)
+		cs, resp, err := is.ListComments(context.TODO(), remoteUser, remoteRepo, *pr.Number, listOptions)
 		if err == nil {
 			issueComments = append(issueComments, cs...)
 		}
@@ -244,7 +245,7 @@ func fetchComments(pr *github.PullRequest, remoteUser, remoteRepo string, prs pu
 		listOptions := &github.PullRequestListCommentsOptions{
 			ListOptions: listOpts,
 		}
-		cs, resp, err := prs.ListComments(remoteUser, remoteRepo, *pr.Number, listOptions)
+		cs, resp, err := prs.ListComments(context.TODO(), remoteUser, remoteRepo, *pr.Number, listOptions)
 		if err == nil {
 			diffComments = append(diffComments, cs...)
 		}

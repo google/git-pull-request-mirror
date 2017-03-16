@@ -23,10 +23,12 @@ limitations under the License.
 package auth
 
 import (
+	"context"
 	"fmt"
+	"os"
+
 	"github.com/google/go-github/github"
 	"golang.org/x/oauth2"
-	"os"
 )
 
 const (
@@ -57,7 +59,7 @@ func TokenClient(token string) *github.Client {
 
 	githubClient := github.NewClient(httpClient)
 
-	_, _, err := githubClient.Users.Get("")
+	_, _, err := githubClient.Users.Get(context.TODO(), "")
 
 	if err != nil {
 		fmt.Println("Token error: ", err)
