@@ -61,13 +61,13 @@ type retryableRequest func() (*github.Response, error)
 func executeRequest(request retryableRequest) error {
 	for i := 0; i < maxRetryAttempts; i++ {
 		resp, err := request()
-		if err == nil || resp.StatusCode != http.StatusForbidden || resp.Remaining != 0 {
+		if err == nil || resp.StatusCode != http.StatusForbidden || resp.Rate.Remaining != 0 {
 			return err
 		}
-		waitDuration := resp.Reset.Sub(time.Now())
+		waitDuration := resp.Rate.Reset.Sub(time.Now())
 		log.Printf("Ran out of github API requests; sleeping %v (until %v)",
 			waitDuration,
-			resp.Reset.Time)
+			resp.Rate.Reset.Time)
 		time.Sleep(waitDuration)
 	}
 	return fmt.Errorf("Exceeded the maximum of %d retry attempts", maxRetryAttempts)
