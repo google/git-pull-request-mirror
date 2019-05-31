@@ -1,1 +1,3 @@
 {"timestamp":"1559264892","status":"success","agent":"cla/google"}
+
+{"timestamp":"1559264892","url":"https://travis-ci.org/google/git-pull-request-mirror/builds/539486375?utm_source=github_status\u0026utm_medium=notification","agent":"continuous-integration/travis-ci/pr"}
