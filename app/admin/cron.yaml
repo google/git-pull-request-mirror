@@ -1,0 +1,4 @@
+cron:
+- description: "hourly restart abandoned operations"
+  url: /restartOperations
+  schedule: every 60 mins

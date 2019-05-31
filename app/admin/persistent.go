@@ -24,7 +24,6 @@ import (
 	"fmt"
 
 	"golang.org/x/net/context"
-	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
 )
 
@@ -32,7 +31,7 @@ type repoStorageData struct {
 	User       string
 	Repo       string
 	Token      string // TODO(jhgilles): add another layer of encryption here?
-	HookID     int
+	HookID     int64
 	HookSecret string
 	Status     string
 	ErrorCause string
@@ -63,28 +62,28 @@ const (
 	statusError             = "Error"              // Hit an unrecoverable error
 )
 
-func initStorage() error {
-	c, done := context.WithCancel(appengine.BackgroundContext())
+func initStorage(ctx context.Context) error {
+	ctx, done := context.WithCancel(ctx)
 	defer done()
 
-	rootKey := makeReposRootKey(c)
-	_, err := datastore.Put(c, rootKey, &struct{}{})
+	rootKey := makeReposRootKey(ctx)
+	_, err := datastore.Put(ctx, rootKey, &struct{}{})
 	return err
 }
 
 // initRepoData is called to declare a new active repository in the
 // datastore. It should run after the repo has been verified to work.
-func initRepoData(c context.Context, user, repo, token string) error {
+func initRepoData(ctx context.Context, user, repo, token string) error {
 	item := repoStorageData{
 		User:   user,
 		Repo:   repo,
 		Token:  token,
 		Status: statusValidating,
 	}
-	key := makeRepoKey(c, user, repo)
-	return datastore.RunInTransaction(c, func(c context.Context) error {
+	key := makeRepoKey(ctx, user, repo)
+	return datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 		var currentItem repoStorageData
-		err := datastore.Get(c, key, &currentItem)
+		err := datastore.Get(ctx, key, &currentItem)
 
 		if err != datastore.ErrNoSuchEntity {
 			if err != nil {
@@ -96,56 +95,56 @@ func initRepoData(c context.Context, user, repo, token string) error {
 			}
 		}
 
-		_, err = datastore.Put(c, key, &item)
+		_, err = datastore.Put(ctx, key, &item)
 		return err
 	}, &datastore.TransactionOptions{})
 }
 
-func modifyRepoData(c context.Context, user, repo string, f func(*repoStorageData)) error {
-	return datastore.RunInTransaction(c, func(c context.Context) error {
-		key := makeRepoKey(c, user, repo)
+func modifyRepoData(ctx context.Context, user, repo string, f func(*repoStorageData)) error {
+	return datastore.RunInTransaction(ctx, func(ctx context.Context) error {
+		key := makeRepoKey(ctx, user, repo)
 
 		var item repoStorageData
 
-		err := datastore.Get(c, key, &item)
+		err := datastore.Get(ctx, key, &item)
 		if err != nil {
 			return err
 		}
 
 		f(&item)
 
-		_, err = datastore.Put(c, key, &item)
+		_, err = datastore.Put(ctx, key, &item)
 
 		return err
 	}, &datastore.TransactionOptions{})
 }
 
 // setRepoError sets a repo to statusErrpr with the given cause
-func setRepoError(c context.Context, user, repo, errorCause string) error {
-	return modifyRepoData(c, user, repo, func(item *repoStorageData) {
+func setRepoError(ctx context.Context, user, repo, errorCause string) error {
+	return modifyRepoData(ctx, user, repo, func(item *repoStorageData) {
 		item.Status = statusError
 		item.ErrorCause = errorCause
 	})
 }
 
 // deleteRepoData does exactly what you'd expect.
-func deleteRepoData(c context.Context, user, repo string) error {
-	key := makeRepoKey(c, user, repo)
-	return datastore.Delete(c, key)
+func deleteRepoData(ctx context.Context, user, repo string) error {
+	key := makeRepoKey(ctx, user, repo)
+	return datastore.Delete(ctx, key)
 }
 
 // getRepoData returns the data for a single repo
-func getRepoData(c context.Context, user, repo string) (result repoStorageData, err error) {
-	key := makeRepoKey(c, user, repo)
-	err = datastore.Get(c, key, &result)
+func getRepoData(ctx context.Context, user, repo string) (result repoStorageData, err error) {
+	key := makeRepoKey(ctx, user, repo)
+	err = datastore.Get(ctx, key, &result)
 	return
 }
 
 // getAllRepoData returns all active or errored repos.
-func getAllRepoData(c context.Context) ([]repoStorageData, error) {
-	rootKey := makeReposRootKey(c)
+func getAllRepoData(ctx context.Context) ([]repoStorageData, error) {
+	rootKey := makeReposRootKey(ctx)
 	q := datastore.NewQuery(repoKind).Ancestor(rootKey)
-	it := q.Run(c)
+	it := q.Run(ctx)
 	current := new(repoStorageData)
 	result := []repoStorageData{}
 
@@ -162,9 +161,9 @@ func getAllRepoData(c context.Context) ([]repoStorageData, error) {
 	return result, nil
 }
 
-func makeReposRootKey(c context.Context) *datastore.Key {
+func makeReposRootKey(ctx context.Context) *datastore.Key {
 	return datastore.NewKey(
-		c,
+		ctx,
 		emptyKind,
 		storageReposPath,
 		0,
@@ -172,12 +171,12 @@ func makeReposRootKey(c context.Context) *datastore.Key {
 	)
 }
 
-func makeRepoKey(c context.Context, user, repo string) *datastore.Key {
+func makeRepoKey(ctx context.Context, user, repo string) *datastore.Key {
 	return datastore.NewKey(
-		c,
+		ctx,
 		repoKind,
 		fmt.Sprintf("%s/%s", user, repo),
 		0,
-		makeReposRootKey(c),
+		makeReposRootKey(ctx),
 	)
 }

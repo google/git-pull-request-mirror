@@ -44,14 +44,15 @@ git appraise push
 ### The Github Mirror App
 
 This app allows users to continually update their git repositories with github
-metadata (pull requests and build statuses). It runs in a managed VM in a
-non-default module, and should expose a web interface at
-github-mirror-dot-$INSTANCE.appspot.com.
+metadata (pull requests and build statuses). It runs in an AppEngine app, and
+should expose a web interface at <PROJECT>.appspot.com.
 
 It uses the app engine datastore to store its configuration.
 
 To deploy:
 
 ```shell
-gcloud app deploy ./app.yaml
+gcloud app deploy ./app/admin/*.yaml
+gcloud app deploy ./app/hooks/*.yaml
+gcloud app deploy ./app/*.yaml
 ```
