@@ -190,9 +190,8 @@ func validate(ctx context.Context, user, repo string) {
 
 	log.Infof(ctx, "Validated repo %s/%s", user, repo)
 
-	var remoteRepo *github.Repository
 	err = retry(ctx, func() (resp *github.Response, err error) {
-		remoteRepo, resp, err = githubClient.Repositories.Get(ctx, user, repo)
+		_, resp, err = githubClient.Repositories.Get(ctx, user, repo)
 		return
 	})
 
@@ -307,7 +306,7 @@ func deactivate(ctx context.Context, userName, repoName string) {
 		errorf("Can't delete webhook: %s", err.Error())
 		// Keep going; we should still delete the repository data
 	} else {
-		log.Infof(ctx, "Deleting hook for repository %s/%s succeeded")
+		log.Infof(ctx, "Deleting hook for repository %s/%s succeeded", userName, repoName)
 	}
 
 	log.Infof(ctx, "Deleting repository data for %s/%s", userName, repoName)

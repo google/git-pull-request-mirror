@@ -7,6 +7,10 @@ The format written is the one defined by the
 [git-appraise code review system](https://github.com/google/git-appraise), so pull
 requests that are mirrored using this tool can be reviewed using git-appraise.
 
+## Disclaimer
+
+This is not an officially supported Google product.
+
 ## Organization
 
 There are 3 packages in this repo:
