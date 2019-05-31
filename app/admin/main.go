@@ -36,7 +36,7 @@ const (
 	idRepoToken = "repoToken"
 )
 
-var configTemplate = template.Must(template.ParseFiles("/go/src/app/templates/config.tmpl"))
+var configTemplate = template.Must(template.ParseFiles("index.html"))
 
 // renderRepo represents a single repository to be rendered on the page
 type renderRepo struct {
@@ -52,12 +52,12 @@ type renderConfig struct {
 
 // configHandler renders a configuration page
 func configHandler(w http.ResponseWriter, req *http.Request) {
-	c := appengine.NewContext(req)
+	ctx := appengine.NewContext(req)
 
 	repos, err := getAllRepoData(appengine.NewContext(req))
 
 	if err != nil {
-		log.Errorf(c, "Error fetching repos: %s", err.Error())
+		log.Errorf(ctx, "Error fetching repos: %s", err.Error())
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -78,89 +78,95 @@ func configHandler(w http.ResponseWriter, req *http.Request) {
 // addHandler handles POSTs to the /add endpoint
 func addHandler(w http.ResponseWriter, req *http.Request) {
 	defer http.Redirect(w, req, "/", http.StatusSeeOther)
-	c := appengine.NewContext(req)
+	ctx := appengine.NewContext(req)
 
 	if req.Method != "POST" {
-		log.Errorf(c, "Incorrect method for /add endpoint: %s", req.Method)
+		log.Errorf(ctx, "Incorrect method for /add endpoint: %s", req.Method)
 		return
 	}
 
 	err := req.ParseForm()
 	if err != nil {
-		log.Errorf(c, "Couldn't parse form for /add endpoint: %s", err.Error())
+		log.Errorf(ctx, "Couldn't parse form for /add endpoint: %s", err.Error())
 		return
 	}
 
 	repoName := req.PostForm.Get(idRepoName)
 	if repoName == "" {
-		log.Errorf(c, "No repoName for /add endpoint: %v", req.PostForm)
+		log.Errorf(ctx, "No repoName for /add endpoint: %v", req.PostForm)
 		return
 	}
 
 	repoToken := req.PostForm.Get(idRepoToken)
 	if repoToken == "" {
-		log.Errorf(c, "No repoToken for /add endpoint: %v", req.PostForm)
+		log.Errorf(ctx, "No repoToken for /add endpoint: %v", req.PostForm)
 		return
 	}
 
 	splitName := strings.Split(repoName, "/")
 	if len(splitName) != 2 {
-		log.Errorf(c, "Invalid repository name (can't split on '/'): %s", repoName)
+		log.Errorf(ctx, "Invalid repository name (can't split on '/'): %s", repoName)
 		return
 	}
 
-	log.Infof(c, "Adding repository %s", repoName)
+	log.Infof(ctx, "Adding repository %s", repoName)
 
-	err = initRepoData(c, splitName[0], splitName[1], repoToken)
+	err = initRepoData(ctx, splitName[0], splitName[1], repoToken)
 
 	if err != nil {
-		log.Errorf(c, "Couldn't store repository %s: %s", repoName, err.Error())
+		log.Errorf(ctx, "Couldn't store repository %s: %s", repoName, err.Error())
 		return
 	}
 
-	go validate(splitName[0], splitName[1])
+	validate(ctx, splitName[0], splitName[1])
 }
 
 // deleteHandler handles POSTS to the /delete endpoint
 func deleteHandler(w http.ResponseWriter, req *http.Request) {
 	defer http.Redirect(w, req, "/", http.StatusSeeOther)
-	c := appengine.NewContext(req)
+	ctx := appengine.NewContext(req)
 
 	if req.Method != "POST" {
-		log.Errorf(c, "Incorrect method for /delete endpoint: %s", req.Method)
+		log.Errorf(ctx, "Incorrect method for /delete endpoint: %s", req.Method)
 		return
 	}
 
 	err := req.ParseForm()
 	if err != nil {
-		log.Errorf(c, "Couldn't parse form for /delete endpoint: %s", err.Error())
+		log.Errorf(ctx, "Couldn't parse form for /delete endpoint: %s", err.Error())
 		return
 	}
 
 	fullRepoName := req.PostForm.Get(idRepoName)
 	if fullRepoName == "" {
-		log.Errorf(c, "No repoName for /delete endpoint: %v", req.PostForm)
+		log.Errorf(ctx, "No repoName for /delete endpoint: %v", req.PostForm)
 		return
 	}
 
 	splitName := strings.Split(fullRepoName, "/")
 	if len(splitName) != 2 {
-		log.Errorf(c, "Invalid repository name (can't split on '/'): %s", fullRepoName)
+		log.Errorf(ctx, "Invalid repository name (can't split on '/'): %s", fullRepoName)
 		return
 	}
 
-	go deactivate(splitName[0], splitName[1])
+	deactivate(ctx, splitName[0], splitName[1])
+}
+
+func restartOperationsHandler(w http.ResponseWriter, req *http.Request) {
+	ctx := appengine.NewContext(req)
+	restartAbandonedOperations(ctx)
+	w.Write([]byte("done"))
 }
 
 // enforceLoginHandler wraps another handler, returning a handler that will
 // enforce user login and then pass off control down the chain.
 func enforceLoginHandler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		c := appengine.NewContext(req)
-		u := user.Current(c)
+		ctx := appengine.NewContext(req)
+		u := user.Current(ctx)
 		if u == nil {
 			// Not logged in
-			url, err := user.LoginURL(c, req.URL.String())
+			url, err := user.LoginURL(ctx, req.URL.String())
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
@@ -168,14 +174,23 @@ func enforceLoginHandler(next http.Handler) http.Handler {
 			http.Redirect(w, req, url, http.StatusSeeOther)
 			return
 		}
+
+		// Ensure that the persistent storage is set up before continuing...
+		initStorage(ctx)
+
 		// Pass off control
 		next.ServeHTTP(w, req)
 	})
 }
 
 func setupHandlers() {
-	setupHookHandlers()
 	http.Handle("/add", enforceLoginHandler(http.HandlerFunc(addHandler)))
 	http.Handle("/delete", enforceLoginHandler(http.HandlerFunc(deleteHandler)))
+	http.Handle("/restartOperations", http.HandlerFunc(restartOperationsHandler))
 	http.Handle("/", enforceLoginHandler(http.HandlerFunc(configHandler)))
+}
+
+func main() {
+	setupHandlers()
+	appengine.Main()
 }
