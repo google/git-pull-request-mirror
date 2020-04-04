@@ -18,6 +18,11 @@ jobs:
           go get github.com/google/git-appraise/git-appraise
           go get github.com/google/git-pull-request-mirror/batch
 
+      - name: Configure git for the PR mirror
+        run: |
+          git config --global user.email "${{ github.repository }}@github.com"
+          git config --global user.name "Pull Request Mirror"
+
       - name: Fetch PR refs
         run: git fetch origin '+refs/pull/*:refs/pull/*'
 
