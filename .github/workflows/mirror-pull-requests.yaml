@@ -25,7 +25,7 @@ jobs:
         run: go run github.com/google/git-appraise/git-appraise pull
 
       - name: Mirror pull requests into local reviews
-        run: go run github.com/google/git-pull-request-mirror/batch --target '${{ github.repository }}' --local ./ --auth-token '${{ secrets.GITHUB_TOKEN }}'
+        run: go run github.com/google/git-pull-request-mirror/batch --target '${{ github.repository }}' --local ./ --auth-token '${{ secrets.PR_MIRROR_TOKEN }}'
 
       - name: Merge any upstream review changes
         run: go run github.com/google/git-appraise/git-appraise pull
