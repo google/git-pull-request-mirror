@@ -15,8 +15,8 @@ jobs:
 
       - name: Setup git-appraise and the pr mirror
         run: |
-          go get github.com/google/git-appraise
-          go get github.com/google/git-pull-request-mirror
+          go get github.com/google/git-appraise/git-appraise
+          go get github.com/google/git-pull-request-mirror/batch
 
       - name: Fetch PR refs
         run: git fetch origin '+refs/pull/*:refs/pull/*'
