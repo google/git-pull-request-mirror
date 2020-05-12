@@ -1,0 +1,1 @@
+{"timestamp":"1589314201","reviewRef":"refs/pull/10/head","targetRef":"refs/heads/master","requester":"ojarjur","description":"Add go modules\n\nAdd go modules to fix a break caused by an incompatible change in the go-github library","baseCommit":"1baed5f6df20667f0a07f4d8c8e4ad74264f3d84"}
